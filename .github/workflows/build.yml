@@ -62,7 +62,9 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git stash --include-untracked
           git pull origin main --rebase
+          git stash pop || true
           git add dist/main.lua
           git diff --cached --quiet && echo "No changes to commit" || git commit -m "Build: auto-update dist/main.lua"
           git push
