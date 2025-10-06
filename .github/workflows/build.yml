@@ -25,20 +25,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
       - name: Setup Rust (for Cargo)
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Setup Lua
         run: sudo apt-get update && sudo apt-get install -y lua5.4
 
-      - name: Install Darklua
-        run: cargo install darklua
+      - name: Install Darklua (via Cargo)
+        run: cargo install darklua || true
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm i
 
       - name: Build project
         run: npm run build
