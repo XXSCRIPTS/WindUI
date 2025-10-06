@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - test-build
     paths:
       - 'src/**'
       - 'package.json'
