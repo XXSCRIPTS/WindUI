@@ -69,4 +69,4 @@ jobs:
           git stash pop || true
           git add dist/main.lua
           git diff --cached --quiet && echo "No changes to commit" || git commit -m "Build: auto-update dist/main.lua"
-          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }} --force-with-lease
