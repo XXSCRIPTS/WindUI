@@ -5,10 +5,11 @@ on:
     branches:
       - main
       - test-build
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
@@ -19,49 +20,44 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      - name: Setup Rust (for Cargo)
-        uses: actions-rs/toolchain@v1
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
         with:
-          toolchain: stable
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
 
-      - name: Cache Cargo
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Rust (for Darklua)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
         uses: actions/cache@v4
         with:
           path: ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
 
-      - name: Setup Lua
-        run: sudo apt-get update && sudo apt-get install -y lua5.4
-
-      - name: Install Darklua (via Cargo)
-        run: cargo install darklua || true
-
-      - name: Install npm dependencies
-        run: npm i
+      - name: Install Darklua
+        run: cargo install darklua || echo "Darklua already installed"
 
       - name: Build project
         run: npm run build
 
       - name: Commit build output
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase
           git add dist/main.lua
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git commit -m "Build: auto-update dist/main.lua"
-          git push origin HEAD:main
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Build: auto-update dist/main.lua"
+          git push
