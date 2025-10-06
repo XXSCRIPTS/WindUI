@@ -5,6 +5,11 @@ on:
     branches:
       - main
       - test-build
+    paths-ignore:
+      - 'README.md'
+      - 'changelog.md'
+      - '.github/**'
+      - 'dist/**'
   workflow_dispatch:
 
 jobs:
@@ -45,6 +50,11 @@ jobs:
 
       - name: Install Darklua
         run: cargo install darklua || echo "Darklua already installed"
+
+      - name: Setup Lua
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
 
       - name: Build project
         run: npm run build
