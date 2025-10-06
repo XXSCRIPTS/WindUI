@@ -59,6 +59,8 @@ jobs:
         run: npm run build
 
       - name: Commit build output
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -67,4 +69,4 @@ jobs:
           git stash pop || true
           git add dist/main.lua
           git diff --cached --quiet && echo "No changes to commit" || git commit -m "Build: auto-update dist/main.lua"
-          git push
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
