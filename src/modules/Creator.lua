@@ -98,6 +98,103 @@ local Creator = {
 function Creator.Init(WindUITable)
     WindUI = WindUITable
 end
+function Creator:New(instanceType, properties)
+    local newInstance = Instance.new(instanceType)
+    for prop, val in pairs(Creator.DefaultProperties[instanceType] or {}) do
+        pcall(function()
+            newInstance[prop] = val
+        end)
+    end
+    for prop, val in pairs(properties or {}) do
+        pcall(function()
+            newInstance[prop] = val
+        end)
+    end
+    return newInstance
+end
+
+function Creator:AddSignal(name)
+    local signal = Instance.new("BindableEvent")
+    self.Signals[name] = signal
+    return signal.Event
+end
+
+function Creator:FireSignal(name, ...)
+    local signal = self.Signals[name]
+    if signal then
+        signal:Fire(...)
+    end
+end
+
+function Creator:GetColor(colorName)
+    return Color3.fromHex(Creator.Colors[colorName] or "#ffffff")
+end
+
+function Creator:SetTheme(themeTable)
+    Creator.Theme = themeTable
+end
+
+function Creator:GetThemeColor(name)
+    if Creator.Theme and Creator.Theme[name] then
+        return Creator.Theme[name]
+    end
+    return Color3.fromHex("#ffffff")
+end
+
+function Creator:SetLocalization(localization)
+    Creator.Localization = localization
+end
+
+function Creator:Translate(text)
+    if Creator.Localization and Creator.Localization[Creator.Language] and Creator.Localization[Creator.Language][text] then
+        return Creator.Localization[Creator.Language][text]
+    end
+    return text
+end
+
+return Creator
+
+--// [CUSTOM BACKGROUND PATCH]
+function Creator:SetBackgroundImage(ImageId, Transparency)
+    -- Find main UI holder (ScreenGui or Frame)
+    local MainFrame
+
+    if WindUI and WindUI.Object then
+        MainFrame = WindUI.Object
+    elseif WindUI and WindUI.MainFrame then
+        MainFrame = WindUI.MainFrame
+    elseif WindUI and WindUI.Frame then
+        MainFrame = WindUI.Frame
+    end
+
+    if not MainFrame then
+        warn("[WindUI] Could not locate main frame for background image!")
+        return
+    end
+
+    -- Remove any existing background
+    if MainFrame:FindFirstChild("CustomBackground") then
+        MainFrame.CustomBackground:Destroy()
+    end
+
+    -- Create new background
+    local Background = Instance.new("ImageLabel")
+    Background.Name = "CustomBackground"
+    Background.Image = ImageId or "rbxassetid://0"
+    Background.BackgroundTransparency = 1
+    Background.ImageTransparency = Transparency or 0
+    Background.Size = UDim2.new(1, 0, 1, 0)
+    Background.ZIndex = 0
+    Background.Parent = MainFrame
+
+    -- Push everything else in front of it
+    for _, v in ipairs(MainFrame:GetChildren()) do
+        if v:IsA("GuiObject") and v ~= Background then
+            v.ZIndex += 1
+        end
+    end
+end
+
 
 function Creator.AddSignal(Signal, Function)
     local conn = Signal:Connect(Function)
